@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    paths:
+      - 'Assets/**'
+      - 'Packages/**'
+      - 'ProjectSettings/**'
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    name: ${{ matrix.unity-version }}-${{ matrix.os }}-${{ matrix.target-platform }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          lfs: true
+      - uses: actions/cache@v3
+        with:
+          path: Library
+          key: ${{ matrix.unity-version }}-${{ matrix.os }}-${{ matrix.target-platform }}
+      - uses: game-ci/unity-builder@v2
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+        with:
+          targetPlatform: ${{ matrix.target-platform }}
+          unityVersion: ${{ matrix.unity-version }}
+          buildName: ARNavigator
+          androidTargetSdkVersion: AndroidApiLevel25
+          androidAppBundle: false
+      - uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.unity-version }}-${{ matrix.os }}-${{ matrix.target-platform }}
+          path: build/${{ matrix.target-platform }}
+
+    strategy:
+      matrix:
+        unity-version:
+          - 2021.3.16f1
+        os:
+          - windows-2019
+          - macos-12
+          - ubuntu-latest
+        include:
+          - os: windows-2019
+            target-platform: StandaloneWindows64
+          - os: macos-12
+            target-platform: iOS
+          - os: ubuntu-latest
+            target-platform: Android
+
+
+
+
